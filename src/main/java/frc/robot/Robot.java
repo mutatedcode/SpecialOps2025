@@ -31,7 +31,7 @@ import edu.wpi.first.wpilibj.Timer; // Knows how long to run
  */
 public class Robot extends TimedRobot {
   private static final String kDefaultAuto = "Default";
-  private static final String kCustomAuto = "My Auto";
+  private static final String kCenterCoral = "Center and Coral"; // display name
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>(); // Let's create a new sendable chooser
 
@@ -42,12 +42,17 @@ public class Robot extends TimedRobot {
   private final SparkMax rightLeader = new SparkMax( /** CAN ID */ 14, MotorType.kBrushed);
   private final SparkMax rightFollower = new SparkMax( /**  CAN ID */ 15, MotorType.kBrushed);
 
+  private final SparkMax rollerMotor = new SparkMax(10, MotorType.kBrushed);
   // 5th CAN ID is port 10!
   
   private final DifferentialDrive myDrive = new DifferentialDrive(leftLeader, rightLeader);
   
   private final SparkMaxConfig driveConfig = new SparkMaxConfig();
+  private final SparkMaxConfig rollerConfig = new SparkMaxConfig();
 
+  private final Timer timer1 = new Timer();
+  
+  private final double ROLLER_EJECT_VALUE = .44;
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
@@ -55,7 +60,7 @@ public class Robot extends TimedRobot {
   @Override
   public void robotInit() {
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
-    m_chooser.addOption("My Auto", kCustomAuto);
+    m_chooser.addOption("Center and Coral", kCenterCoral);
     SmartDashboard.putData("Auto choices", m_chooser);
 
     // If you use too much current, the breaker will trip, and stop for a short period of time
@@ -75,8 +80,15 @@ public class Robot extends TimedRobot {
 
     driveConfig.disableFollowerMode();
     rightLeader.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    
+    driveConfig.inverted(true);
     leftLeader.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
+    rollerConfig.smartCurrentLimit(60);
+    rollerConfig.voltageCompensation(10);
+    rollerMotor.configure(rollerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
+     timer1.start();
   } // Runs only one time
 
   /**
@@ -104,23 +116,41 @@ public class Robot extends TimedRobot {
     m_autoSelected = m_chooser.getSelected();
     // m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
     System.out.println("Auto selected: " + m_autoSelected);
+    timer1.restart();
   } // first 15 seconds
 
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
     switch (m_autoSelected) {
-      case kCustomAuto:
+      case kCenterCoral:
         // Put custom auto code here
-        break;
-      case kDefaultAuto:
-      default:
-        // Put default auto code here
-        // If you tell the leader to do something, so will the follower
-        leftLeader.set(.5);
-        break;
+        // stop and deposit the coral
+        // stop everything!!!
+
+        if (timer1.get() < 1.85) { // drive to reef
+          myDrive.tankDrive(.5, .5);
+        }
+        else if (timer1.get() < 3) { // spit out coral
+          myDrive.tankDrive(0, 0);
+        }
+        else if (timer1.get() < 3.85) { // spit out coral
+          myDrive.tankDrive(0, 0);
+          rollerMotor.set(ROLLER_EJECT_VALUE);
+        }
+
+        else {
+          myDrive.tankDrive(0, 0);
+          rollerMotor.set(0);
+        }
+          break;
+        case kDefaultAuto:
+        default:
+
+          break;
+        }     
+ 
     }
-  }
 
   /** This function is called once when teleop is enabled. */
   @Override
