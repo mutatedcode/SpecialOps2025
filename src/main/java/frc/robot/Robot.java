@@ -22,7 +22,7 @@ import com.revrobotics.spark.SparkBase.ResetMode;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.Timer; // Knows how long to run
 
-
+import edu.wpi.first.wpilibj.XboxController;
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
  * each mode, as described in the TimedRobot documentation. If you change the name of this class or
@@ -53,6 +53,9 @@ public class Robot extends TimedRobot {
   private final Timer timer1 = new Timer();
   
   private final double ROLLER_EJECT_VALUE = .44;
+  private double DriveSpeed = 1;
+  
+  private final XboxController gamepad0 = new XboxController(0);
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
@@ -158,7 +161,20 @@ public class Robot extends TimedRobot {
 
   /** This function is called periodically during operator control. */
   @Override
-  public void teleopPeriodic() {}
+  public void teleopPeriodic() {
+    if(gamepad0.getLeftBumperButton()) {
+      DriveSpeed = .5;
+    }
+    if(gamepad0.getRightBumperButton()) {
+      DriveSpeed = 1;
+    }
+    // Tank Drive
+    // myDrive.tankDrive(-gamepad0.getLeftY(), -gamepad0.getRightY());
+
+    // Arcade Drive
+    myDrive.arcadeDrive(-gamepad0.getLeftY() * DriveSpeed, -gamepad0.getRightX() * DriveSpeed);
+
+  }
 
   /** This function is called once when the robot is disabled. */
   @Override
